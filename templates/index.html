@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minime - Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="profile-header">
+        <img src="/avatar" alt="Avatar">
+        <div>
+            <h1>{{ profile.name }}</h1>
+            <p>Professional Profile</p>
+        </div>
+    </div>
+
+    <main>
+        <section>
+            <h2>👤 About Me</h2>
+            <p>{{ profile.bio }}</p>
+        </section>
+
+        <section>
+            <h2>💼 Skills</h2>
+            <ul>
+                {% for skill in profile.skills %}
+                <li>{{ skill }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section>
+            <h2>🎯 Interests</h2>
+            <ul>
+                {% for interest in profile.interests %}
+                <li>{{ interest }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section>
+            <h2>✨ Brand Headlines</h2>
+            <ul>
+                {% for headline in profile.brand_headlines %}
+                <li>{{ headline }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section>
+            <h2>🚀 Value Proposition</h2>
+            <ul>
+                <li>{{ profile.value_prop }}</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>💬 Talking Points</h2>
+            <ul>
+                {% for point in profile.talking_points %}
+                <li>{{ point }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <button onclick="window.print()">Print Profile</button>
+        <p>&copy; 2026 Minime App</p>
+    </footer>
+</body>
+</html>

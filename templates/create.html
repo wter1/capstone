@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minime - Create Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <main>
+        <section>
+            <h2>Create Your Profile</h2>
+            <form method="post">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required>
+
+                <label for="bio">Bio:</label>
+                <textarea id="bio" name="bio" rows="4" required></textarea>
+
+                <label for="skills">Skills (comma-separated):</label>
+                <input type="text" id="skills" name="skills" placeholder="e.g., Python, Excel, R" required>
+
+                <label for="interests">Interests (comma-separated):</label>
+                <input type="text" id="interests" name="interests" placeholder="e.g., Tech, Food, Parks" required>
+
+                <button type="submit" class="btn">Generate Profile</button>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

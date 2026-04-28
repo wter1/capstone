@@ -9,3 +9,8 @@ The MVP for me would be just having the version that's adapted to my "profile." 
 
 **What don't you know yet? Be honest about uncertainties - new libraries, APIs, concepts you need to learn.**
 I am unsure if I would need any other libraries for AI than the one that we used in class. For API's I think grabbing some online profiler to aid the AI in creating your "profile." I am unsure though I to integrate AI with API's at the moment. As for concepts, although we did have a class on using AI, I think I need to go to the website and read on the topic a bit more to understand all the intricacies that go into creating an AI product.
+
+
+
+**Pivot 1**
+After talking to one of my classmates, i've gained an insight that using an AI might not be the best way to deal with mental health rather than a real therapist. For that reason I want to pivot the goal/marketing of the project to just a sort of minime. In marketing we learned about "marketing yourself" so perhaps something an AI or something more derivative could help with it. 
