@@ -1,5 +1,5 @@
 from flask import Flask, render_template, send_file, session, request, redirect, url_for
-from PIL import Image, ImageDraw
+#from PIL import Image, ImageDraw
 import hashlib
 import io
 import json
