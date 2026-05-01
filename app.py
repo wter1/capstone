@@ -1,29 +1,79 @@
 from flask import Flask, render_template, send_file, session, request, redirect, url_for
-
 from PIL import Image, ImageDraw
-
 import hashlib
-
 import io
-
-from openai import OpenAI
-
-from dotenv import load_dotenv
-
+import json
+import base64
 import os
+import uuid
+from openai import OpenAI
+from dotenv import load_dotenv
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 load_dotenv()
 
-api_key = os.environ['OPENAI_API_KEY']
+api_key = os.environ.get('OPENAI_API_KEY')
 if not api_key:
     raise ValueError("OPENAI_API_KEY not found. Check your .env file.")
 
 client = OpenAI(api_key=api_key)
-
-
 app = Flask(__name__)
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key')
 
-app.secret_key = "dev-secret-key"
+USER_STORE_FILE = os.path.join(os.path.dirname(__file__), 'user_store.json')
+USER_KEYS = {}
+
+if not os.path.exists(USER_STORE_FILE):
+    with open(USER_STORE_FILE, 'w', encoding='utf-8') as store_file:
+        json.dump({}, store_file)
+
+
+def load_user_store():
+    with open(USER_STORE_FILE, 'r', encoding='utf-8') as store_file:
+        return json.load(store_file)
+
+
+def save_user_store(store):
+    with open(USER_STORE_FILE, 'w', encoding='utf-8') as store_file:
+        json.dump(store, store_file, indent=2)
+
+
+def derive_key(password, salt):
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=200_000,
+    )
+    return base64.urlsafe_b64encode(kdf.derive(password.encode('utf-8')))
+
+
+def hash_password(password, salt):
+    return hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 200_000).hex()
+
+
+def encrypt_profile(profile, key):
+    payload = json.dumps(profile).encode('utf-8')
+    return Fernet(key).encrypt(payload).decode('utf-8')
+
+
+def decrypt_profile(token, key):
+    payload = Fernet(key).decrypt(token.encode('utf-8'))
+    return json.loads(payload.decode('utf-8'))
+
+
+def get_current_user_record():
+    store = load_user_store()
+    user_id = session.get('user_id')
+    return store.get(user_id), store, user_id
+
+
+def get_user_key():
+    token = session.get('session_token')
+    return USER_KEYS.get(token)
+
 
 def generate_avatar(profile):
 
@@ -148,86 +198,141 @@ Rules:
 
 @app.route('/')
 def home():
-
     return render_template('home.html')
+
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    error = None
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        if not email or not password:
+            error = 'Enter both email and password.'
+        else:
+            store = load_user_store()
+            user_id = hashlib.sha256(email.encode('utf-8')).hexdigest()
+            if store.get(user_id):
+                error = 'An account already exists. Please sign in.'
+            else:
+                salt = os.urandom(16)
+                key = derive_key(password, salt)
+                record = {
+                    'email': email,
+                    'password_hash': hash_password(password, salt),
+                    'salt': base64.b64encode(salt).decode('utf-8'),
+                    'encrypted_profile': None
+                }
+                store[user_id] = record
+                save_user_store(store)
+                session['user_id'] = user_id
+                session['email'] = email
+                session['session_token'] = str(uuid.uuid4())
+                USER_KEYS[session['session_token']] = key
+                return redirect(url_for('create'))
+    return render_template('signup.html', error=error)
+
+
+@app.route('/signin', methods=['GET', 'POST'])
+def signin():
+    error = None
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        if not email or not password:
+            error = 'Enter both email and password.'
+        else:
+            store = load_user_store()
+            user_id = hashlib.sha256(email.encode('utf-8')).hexdigest()
+            record = store.get(user_id)
+            if not record:
+                error = 'No account found. Please create a new account.'
+            else:
+                salt = base64.b64decode(record['salt'])
+                if record['password_hash'] != hash_password(password, salt):
+                    error = 'Email or password is incorrect.'
+                else:
+                    key = derive_key(password, salt)
+                    session['user_id'] = user_id
+                    session['email'] = email
+                    session['session_token'] = str(uuid.uuid4())
+                    USER_KEYS[session['session_token']] = key
+                    if record.get('encrypted_profile'):
+                        return redirect(url_for('profile'))
+                    return redirect(url_for('create'))
+    return render_template('signin.html', error=error)
+
+
+@app.route('/signout')
+def signout():
+    token = session.pop('session_token', None)
+    if token:
+        USER_KEYS.pop(token, None)
+    session.clear()
+    return redirect(url_for('home'))
+
 
 @app.route('/create', methods=['GET', 'POST'])
 def create():
+    key = get_user_key()
+    if 'user_id' not in session or not key:
+        return redirect(url_for('home'))
 
     if request.method == 'POST':
-
-        skills = request.form['skills'].split(',')
-
-        interests = request.form['interests'].split(',')
-
+        skills = request.form.get('skills', '').split(',')
+        interests = request.form.get('interests', '').split(',')
         profile = {
-
-            'name': request.form['name'],
-
-            'bio': request.form['bio'],
-
-            'skills': [s.strip() for s in skills],
-
-            'interests': [i.strip() for i in interests]
-
+            'name': request.form.get('name', '').strip(),
+            'bio': request.form.get('bio', '').strip(),
+            'skills': [s.strip() for s in skills if s.strip()],
+            'interests': [i.strip() for i in interests if i.strip()]
         }
-
         profile['talking_points'] = generate_talking_points(profile)
-
         profile['brand_headlines'] = generate_brand_headlines(profile)
-
         profile['value_prop'] = generate_value_prop(profile)
 
-        session['profile'] = profile
-
+        record, store, user_id = get_current_user_record()
+        if not record:
+            return redirect(url_for('home'))
+        record['encrypted_profile'] = encrypt_profile(profile, key)
+        store[user_id] = record
+        save_user_store(store)
         return redirect(url_for('profile'))
 
-    return render_template('create.html')
+    return render_template('create.html', email=session.get('email'))
 
 @app.route('/profile')
 def profile():
+    key = get_user_key()
+    if 'user_id' not in session or not key:
+        return redirect(url_for('home'))
 
-    profile = session.get('profile', {
+    record, _, _ = get_current_user_record()
+    if not record or not record.get('encrypted_profile'):
+        return redirect(url_for('create'))
 
-        'name': 'John Doe',
-
-        'bio': 'Born in Idaho and currently a student at Bentley University majoring in business administration. I have a passion for fishing and long walks on the beach.',
-
-        'skills': ['Proficient in Excel', 'R', 'SQL', 'Python'],
-
-        'interests': ['Tech', 'Food', 'Parks', 'Franchises'],
-
-        'talking_points': ['Highlight your technical skills in data analysis.', 'Share your passion for outdoor activities to connect personally.', 'Discuss your business administration background.']
-
-    })
+    try:
+        profile = decrypt_profile(record['encrypted_profile'], key)
+    except Exception:
+        return redirect(url_for('home'))
 
     return render_template('index.html', profile=profile)
 
 @app.route('/avatar')
 def avatar():
+    key = get_user_key()
+    if 'user_id' not in session or not key:
+        return redirect(url_for('home'))
 
-    profile = session.get('profile', {
+    record, _, _ = get_current_user_record()
+    if not record or not record.get('encrypted_profile'):
+        return redirect(url_for('create'))
 
-        'name': 'John Doe',
-
-        'bio': 'Born in Idaho and currently a student at Bentley University majoring in business administration. I have a passion for fishing and long walks on the beach.',
-
-        'skills': ['Proficient in Excel', 'R', 'SQL', 'Python'],
-
-        'interests': ['Tech', 'Food', 'Parks', 'Franchises'],
-
-        'talking_points': ['Highlight your technical skills in data analysis.', 'Share your passion for outdoor activities to connect personally.', 'Discuss your business administration background.']
-
-    })
-
+    profile = decrypt_profile(record['encrypted_profile'], key)
     img = generate_avatar(profile)
-
     img_io = io.BytesIO()
-
     img.save(img_io, 'PNG')
-
     img_io.seek(0)
-
     return send_file(img_io, mimetype='image/png')
 
 if __name__ == '__main__':

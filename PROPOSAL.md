@@ -14,3 +14,14 @@ I am unsure if I would need any other libraries for AI than the one that we used
 
 **Pivot 1**
 After talking to one of my classmates, i've gained an insight that using an AI might not be the best way to deal with mental health rather than a real therapist. For that reason I want to pivot the goal/marketing of the project to just a sort of minime. In marketing we learned about "marketing yourself" so perhaps something an AI or something more derivative could help with it. 
+
+
+
+
+
+
+**Suggestions**
+resume Upload / voice detect / help improve speed
+
+Skill tags, availible to users where users can vibe it out 
+Other users ingformation to have which ones users lies 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minime - Home</title>
+    <title>Minime - Sign In</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
@@ -11,8 +11,11 @@
     <main>
         <section>
             <h2>Welcome to Minime</h2>
-            <p>Create and share your personalized self-marketing profile with unique avatars.</p>
-            <a href="/create" class="btn">Create My Profile</a>
+            <p>Choose whether to sign in to an existing account or create a new one.</p>
+            <div class="auth-actions">
+                <a href="{{ url_for('signin') }}" class="btn">Sign In</a>
+                <a href="{{ url_for('signup') }}" class="btn secondary">Create Account</a>
+            </div>
         </section>
     </main>
 </body>
