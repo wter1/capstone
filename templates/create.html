@@ -3,30 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minime - Create Profile</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <title>Create Profile - Minime</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
+    <header>
+        <h1>Create Profile</h1>
+    </header>
+
     <main>
-        <section>
-            <h2>Create Your Profile</h2>
-            <form method="post">
-                <label for="name">Name:</label>
-                <input type="text" id="name" name="name" required>
+        <div class="card-grid" style="margin-top: 2rem;">
+            <section class="card card-full">
+                <p>Tell us about yourself to generate your personal brand profile.</p>
 
-                <label for="bio">Bio:</label>
-                <textarea id="bio" name="bio" rows="4" required></textarea>
+                <form method="post">
+                    <div class="form-group">
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
 
-                <label for="skills">Skills (comma-separated):</label>
-                <input type="text" id="skills" name="skills" placeholder="e.g., Python, Excel, R" required>
+                    <div class="form-group">
+                        <label for="bio">Bio</label>
+                        <textarea id="bio" name="bio" rows="4" required></textarea>
+                    </div>
 
-                <label for="interests">Interests (comma-separated):</label>
-                <input type="text" id="interests" name="interests" placeholder="e.g., Tech, Food, Parks" required>
+                    <div class="form-group">
+                        <label for="skills">Skills</label>
+                        <input type="text" id="skills" name="skills" placeholder="e.g., Python, Excel, Leadership" required>
+                    </div>
 
-                <button type="submit" class="btn">Generate Profile</button>
-            </form>
-        </section>
+                    <div class="form-group">
+                        <label for="interests">Interests</label>
+                        <input type="text" id="interests" name="interests" placeholder="e.g., AI, Startups, Mentoring" required>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn">Generate Profile</button>
+                        {% if request.args.get('from_profile') %}
+                        <a href="{{ url_for('profile') }}" class="btn secondary">Back</a>
+                        {% else %}
+                        <a href="{{ url_for('home') }}" class="btn secondary">Back</a>
+                        {% endif %}
+                    </div>
+                </form>
+            </section>
+        </div>
     </main>
 </body>
 </html>

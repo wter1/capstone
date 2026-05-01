@@ -82,7 +82,7 @@ def extract_resume_text(file_storage):
 
 
 def generate_talking_points_from_resume(resume_text):
-    prompt = f"Based on this resume text, generate 3-5 concise talking points for personal branding and networking conversations. Do NOT use bold text, but make sure to include the points number order at the start of every point. Resume text: {resume_text}"
+    prompt = f"Based on this resume text, generate 3-5 concise talking points for personal branding and networking conversations. Return each point as plain text without any numbering, bullets, dashes, or prefixes. Just the talking point text. Resume text: {resume_text}"
     try:
         response = client.chat.completions.create(
             model='gpt-4o-mini',
@@ -93,6 +93,20 @@ def generate_talking_points_from_resume(resume_text):
         return [point.strip('- ').strip() for point in points if point.strip()]
     except Exception as e:
         return [f"Error generating talking points: {e}"]
+
+
+def generate_suggestions_from_resume(resume_text):
+    prompt = f"Based on this resume text, generate 3-5 actionable suggestions for what to add to their resume and next career steps. Focus on skills to develop, experiences to gain, and career advancement opportunities. Return each suggestion as plain text without any numbering, bullets, dashes, or prefixes. Just the suggestion text. Resume text: {resume_text}"
+    try:
+        response = client.chat.completions.create(
+            model='gpt-4o-mini',
+            messages=[{'role': 'user', 'content': prompt}],
+            max_tokens=400
+        )
+        suggestions = response.choices[0].message.content.strip().split('\n')
+        return [suggestion.strip('- ').strip() for suggestion in suggestions if suggestion.strip()]
+    except Exception as e:
+        return [f"Error generating suggestions: {e}"]
 
 
 def generate_brand_headlines_from_resume(resume_text):
@@ -150,7 +164,8 @@ def generate_resume_outputs(resume_text):
     return {
         'talking_points': generate_talking_points_from_resume(resume_text),
         'brand_headlines': generate_brand_headlines_from_resume(resume_text),
-        'value_prop': generate_value_prop_from_resume(resume_text)
+        'value_prop': generate_value_prop_from_resume(resume_text),
+        'suggestions': generate_suggestions_from_resume(resume_text)
     }
 
 
@@ -193,7 +208,7 @@ def generate_avatar(profile):
 
 def generate_talking_points(profile):
 
-    prompt = f"Based on this person's profile: Name: {profile['name']}, Bio: {profile['bio']}, Skills: {', '.join(profile['skills'])}, Interests: {', '.join(profile['interests'])}, generate 3-5 concise talking points for personal branding and networking conversations. Do NOT include bold text."
+    prompt = f"Based on this person's profile: Name: {profile['name']}, Bio: {profile['bio']}, Skills: {', '.join(profile['skills'])}, Interests: {', '.join(profile['interests'])}, generate 3-5 concise talking points for personal branding and networking conversations. Return each point as plain text without any numbering, bullets, dashes, or prefixes. Just the talking point text."
 
     try:
 
@@ -214,6 +229,30 @@ def generate_talking_points(profile):
     except Exception as e:
 
         return ["Error generating talking points: " + str(e)]
+
+def generate_suggestions(profile):
+
+    prompt = f"Based on this person's profile: Name: {profile['name']}, Bio: {profile['bio']}, Skills: {', '.join(profile['skills'])}, Interests: {', '.join(profile['interests'])}, generate 3-5 actionable suggestions for what to add to their resume and next career steps. Focus on skills to develop, experiences to gain, and career advancement opportunities. Return each suggestion as plain text without any numbering, bullets, dashes, or prefixes. Just the suggestion text."
+
+    try:
+
+        response = client.chat.completions.create(
+
+            model="gpt-4o-mini",
+
+            messages=[{"role": "user", "content": prompt}],
+
+            max_tokens=400
+
+        )
+
+        suggestions = response.choices[0].message.content.strip().split('\n')
+
+        return [suggestion.strip('- ').strip() for suggestion in suggestions if suggestion.strip()]
+
+    except Exception as e:
+
+        return ["Error generating suggestions: " + str(e)]
 
 def generate_brand_headlines(profile):
 
@@ -439,6 +478,7 @@ def create():
         profile['talking_points'] = generate_talking_points(profile)
         profile['brand_headlines'] = generate_brand_headlines(profile)
         profile['value_prop'] = generate_value_prop(profile)
+        profile['suggestions'] = generate_suggestions(profile)
 
         record, store, user_id = get_current_user_record()
         if not record:
@@ -498,10 +538,12 @@ def profile():
         talking_points = resume_outputs.get('talking_points', [])
         brand_headlines = resume_outputs.get('brand_headlines', [])
         value_prop = resume_outputs.get('value_prop', '')
+        suggestions = resume_outputs.get('suggestions', [])
     else:
         talking_points = profile.get('talking_points', [])
         brand_headlines = profile.get('brand_headlines', [])
         value_prop = profile.get('value_prop', '')
+        suggestions = profile.get('suggestions', [])
 
     return render_template(
         'index.html',
@@ -511,7 +553,8 @@ def profile():
         has_form=has_form,
         talking_points=talking_points,
         brand_headlines=brand_headlines,
-        value_prop=value_prop
+        value_prop=value_prop,
+        suggestions=suggestions
     )
 
 @app.route('/avatar')

@@ -3,107 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minime - Profile</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <title>Profile - Minime</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <div class="profile-header">
-        <img src="/avatar" alt="Avatar">
-        <div>
-            <h1>{{ profile.name }}</h1>
-            <p>Professional Profile</p>
-        </div>
-    </div>
-
-    <div class="profile-actions">
-        {% if has_resume %}
-            {% if output_mode == 'resume' %}
-                <a href="{{ url_for('use_form') }}" class="btn secondary">View Form Outputs</a>
-            {% else %}
-                <a href="{{ url_for('use_resume') }}" class="btn">Use Resume Outputs</a>
-            {% endif %}
-        {% endif %}
-        <a href="{{ url_for('upload_resume') }}" class="btn secondary">Upload Resume</a>
-        <a href="{{ url_for('create') }}" class="btn">Create New Profile</a>
-        <a href="{{ url_for('signout') }}" class="btn secondary">Sign Out</a>
-    </div>
+    <header>
+        <h1>{{ profile.name }}</h1>
+    </header>
 
     <main>
+        <div class="profile-actions">
+            {% if has_resume %}
+                {% if output_mode == 'resume' %}
+                    <a href="{{ url_for('use_form') }}" class="btn secondary">View Form</a>
+                {% else %}
+                    <a href="{{ url_for('use_resume') }}" class="btn">Use Resume</a>
+                {% endif %}
+            {% endif %}
+            <a href="{{ url_for('upload_resume') }}" class="btn secondary">Upload Resume</a>
+            <a href="{{ url_for('create', from_profile='true') }}" class="btn secondary">New Profile</a>
+            <a href="{{ url_for('signout') }}" class="btn secondary">Sign Out</a>
+        </div>
+
         {% if output_mode == 'resume' %}
-        <section class="note-section">
-            <p class="note">This page is using your uploaded resume to generate outputs.</p>
+        <section class="card card-full">
+            <p class="note">📄 Using resume-based outputs</p>
         </section>
         {% endif %}
 
-        <section>
-            <h2>👤 About Me</h2>
-            <p>{{ profile.bio }}</p>
-        </section>
+        <div class="card-grid">
+            <div class="card">
+                <div class="card-title">About</div>
+                <div class="card-content">{{ profile.bio }}</div>
+            </div>
 
-        <section>
-            <h2>💼 Skills</h2>
-            <ul>
-                {% if profile.skills %}
+            {% if profile.skills %}
+            <div class="card">
+                <div class="card-title">Skills</div>
+                <ul>
                     {% for skill in profile.skills %}
                     <li>{{ skill }}</li>
                     {% endfor %}
-                {% else %}
-                    <li>No skills data available.</li>
-                {% endif %}
-            </ul>
-        </section>
+                </ul>
+            </div>
+            {% endif %}
 
-        <section>
-            <h2>🎯 Interests</h2>
-            <ul>
-                {% if profile.interests %}
+            {% if profile.interests %}
+            <div class="card">
+                <div class="card-title">Interests</div>
+                <ul>
                     {% for interest in profile.interests %}
                     <li>{{ interest }}</li>
                     {% endfor %}
-                {% else %}
-                    <li>No interests data available.</li>
-                {% endif %}
-            </ul>
-        </section>
+                </ul>
+            </div>
+            {% endif %}
 
-        <section>
-            <h2>✨ Brand Headlines</h2>
-            <ul>
-                {% if brand_headlines %}
+            {% if brand_headlines %}
+            <div class="card">
+                <div class="card-title">Brand Headlines</div>
+                <ul>
                     {% for headline in brand_headlines %}
                     <li>{{ headline }}</li>
                     {% endfor %}
-                {% else %}
-                    <li>No headlines available.</li>
-                {% endif %}
-            </ul>
-        </section>
+                </ul>
+            </div>
+            {% endif %}
 
-        <section>
-            <h2>🚀 Value Proposition</h2>
-            <ul>
-                <li>{{ value_prop or 'No value proposition available.' }}</li>
-            </ul>
-        </section>
+            {% if value_prop %}
+            <div class="card card-full">
+                <div class="card-title">Value Proposition</div>
+                <div class="card-content">{{ value_prop }}</div>
+            </div>
+            {% endif %}
 
-        <section>
-            <h2>💬 Talking Points</h2>
-            <ul>
-                {% if talking_points %}
+            {% if talking_points %}
+            <div class="card card-full">
+                <div class="card-title">Talking Points</div>
+                <ul>
                     {% for point in talking_points %}
                     <li>{{ point }}</li>
                     {% endfor %}
-                {% else %}
-                    <li>No talking points available.</li>
-                {% endif %}
-            </ul>
-        </section>
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if suggestions %}
+            <div class="card card-full">
+                <div class="card-title">Career Suggestions</div>
+                <ul>
+                    {% for suggestion in suggestions %}
+                    <li>{{ suggestion }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
     </main>
 
     <footer>
         <button onclick="window.print()">Print Profile</button>
-        <p>&copy; 2026 Minime App</p>
+        <p>&copy; 2026 Minime</p>
     </footer>
 </body>
 </html>

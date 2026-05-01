@@ -3,20 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minime - Sign In</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <title>Minime</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
+    <header>
+        <h1>Minime</h1>
+    </header>
+
     <main>
-        <section>
-            <h2>Welcome to Minime</h2>
-            <p>Choose whether to sign in to an existing account or create a new one.</p>
-            <div class="auth-actions">
-                <a href="{{ url_for('signin') }}" class="btn">Sign In</a>
-                <a href="{{ url_for('signup') }}" class="btn secondary">Create Account</a>
-            </div>
-        </section>
+        <div class="card-grid" style="margin-top: 2rem;">
+            <section class="card card-full">
+                <div class="card-title">Create Your Personal Brand</div>
+                <p style="margin-bottom: 1.5rem;">Share your profile or resume to generate AI-powered brand insights.</p>
+                
+                <div class="form-actions">
+                    <a href="{{ url_for('signin') }}" class="btn">Sign In</a>
+                    <a href="{{ url_for('signup') }}" class="btn secondary">Create Account</a>
+                </div>
+            </section>
+        </div>
     </main>
 </body>
 </html>
