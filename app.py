@@ -1,3 +1,5 @@
+print("APP STARTING...")
+
 from flask import Flask, render_template, send_file, session, request, redirect, url_for
 #from PIL import Image, ImageDraw
 import hashlib
@@ -180,31 +182,31 @@ def get_user_key():
     return USER_KEYS.get(token)
 
 
-def generate_avatar(profile):
+# def generate_avatar(profile):
 
-    data = str(profile)
+#     data = str(profile)
 
-    hash_obj = hashlib.md5(data.encode())
+#     hash_obj = hashlib.md5(data.encode())
 
-    seed = int(hash_obj.hexdigest(), 16) % 1000000
+#     seed = int(hash_obj.hexdigest(), 16) % 1000000
 
-    img = Image.new('RGB', (100, 100), color='white')
+#     img = Image.new('RGB', (100, 100), color='white')
 
-    draw = ImageDraw.Draw(img)
+#     draw = ImageDraw.Draw(img)
 
-    r = (seed % 256)
+#     r = (seed % 256)
 
-    g = ((seed // 256) % 256)
+#     g = ((seed // 256) % 256)
 
-    b = ((seed // 65536) % 256)
+#     b = ((seed // 65536) % 256)
 
-    draw.ellipse([10, 10, 90, 90], fill=(r, g, b))
+#     draw.ellipse([10, 10, 90, 90], fill=(r, g, b))
 
-    initial = profile['name'][0].upper()
+#     initial = profile['name'][0].upper()
 
-    draw.text((45, 45), initial, fill='white')
+#     draw.text((45, 45), initial, fill='white')
 
-    return img
+#     return img
 
 def generate_talking_points(profile):
 
@@ -557,22 +559,22 @@ def profile():
         suggestions=suggestions
     )
 
-@app.route('/avatar')
-def avatar():
-    key = get_user_key()
-    if 'user_id' not in session or not key:
-        return redirect(url_for('home'))
+# @app.route('/avatar')
+# def avatar():
+#     key = get_user_key()
+#     if 'user_id' not in session or not key:
+#         return redirect(url_for('home'))
 
-    record, _, _ = get_current_user_record()
-    if not record or not record.get('encrypted_profile'):
-        return redirect(url_for('create'))
+#     record, _, _ = get_current_user_record()
+#     if not record or not record.get('encrypted_profile'):
+#         return redirect(url_for('create'))
 
-    profile = decrypt_profile(record['encrypted_profile'], key)
-    img = generate_avatar(profile)
-    img_io = io.BytesIO()
-    img.save(img_io, 'PNG')
-    img_io.seek(0)
-    return send_file(img_io, mimetype='image/png')
+#     profile = decrypt_profile(record['encrypted_profile'], key)
+#     img = generate_avatar(profile)
+#     img_io = io.BytesIO()
+#     img.save(img_io, 'PNG')
+#     img_io.seek(0)
+#     return send_file(img_io, mimetype='image/png')
 
 if __name__ == '__main__':
 
