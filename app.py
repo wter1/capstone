@@ -1,5 +1,3 @@
-print("APP STARTING...")
-
 from flask import Flask, render_template, send_file, session, request, redirect, url_for
 #from PIL import Image, ImageDraw
 import hashlib
@@ -21,7 +19,8 @@ api_key = os.environ.get('OPENAI_API_KEY')
 if not api_key:
     raise ValueError("OPENAI_API_KEY not found. Check your .env file.")
 
-client = OpenAI(api_key=api_key)
+def get_client():
+    return OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key')
 
@@ -86,7 +85,7 @@ def extract_resume_text(file_storage):
 def generate_talking_points_from_resume(resume_text):
     prompt = f"Based on this resume text, generate 3-5 concise talking points for personal branding and networking conversations. Return each point as plain text without any numbering, bullets, dashes, or prefixes. Just the talking point text. Resume text: {resume_text}"
     try:
-        response = client.chat.completions.create(
+        response = get_client().chat.completions.create(
             model='gpt-4o-mini',
             messages=[{'role': 'user', 'content': prompt}],
             max_tokens=400
@@ -100,7 +99,7 @@ def generate_talking_points_from_resume(resume_text):
 def generate_suggestions_from_resume(resume_text):
     prompt = f"Based on this resume text, generate 3-5 actionable suggestions for what to add to their resume and next career steps. Focus on skills to develop, experiences to gain, and career advancement opportunities. Return each suggestion as plain text without any numbering, bullets, dashes, or prefixes. Just the suggestion text. Resume text: {resume_text}"
     try:
-        response = client.chat.completions.create(
+        response = get_client().chat.completions.create(
             model='gpt-4o-mini',
             messages=[{'role': 'user', 'content': prompt}],
             max_tokens=400
@@ -126,7 +125,7 @@ Rules:
 - Each headline should be one line
 """
     try:
-        response = client.chat.completions.create(
+        response = get_client().chat.completions.create(
             model='gpt-4o-mini',
             messages=[{'role': 'user', 'content': prompt}],
             max_tokens=200
@@ -152,7 +151,7 @@ Rules:
 - Do not explain anything
 """
     try:
-        response = client.chat.completions.create(
+        response = get_client().chat.completions.create(
             model='gpt-4o-mini',
             messages=[{'role': 'user', 'content': prompt}],
             max_tokens=100
@@ -214,7 +213,7 @@ def generate_talking_points(profile):
 
     try:
 
-        response = client.chat.completions.create(
+        response = get_client().chat.completions.create(
 
             model="gpt-4o-mini",
 
@@ -238,7 +237,7 @@ def generate_suggestions(profile):
 
     try:
 
-        response = client.chat.completions.create(
+        response = get_client().chat.completions.create(
 
             model="gpt-4o-mini",
 
@@ -276,7 +275,7 @@ Rules:
 """
 
     try:
-        response = client.chat.completions.create(
+        response = get_client().chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=200
@@ -310,7 +309,7 @@ Rules:
 
     try:
 
-        response = client.chat.completions.create(
+        response = get_client().chat.completions.create(
 
             model="gpt-4o-mini",
 
