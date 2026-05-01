@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Resume</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Upload Your Resume</h1>
+    </header>
+
+    <main>
+        <section>
+            <p>Upload a PDF or TXT resume to generate branding outputs from your existing experience.</p>
+            {% if resume_exists %}
+                <p class="note">A resume is already uploaded. Uploading a new file will replace it.</p>
+            {% endif %}
+
+            {% if error %}
+                <p class="error">{{ error }}</p>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data">
+                <label for="resume">Resume file (.pdf or .txt):</label>
+                <input type="file" id="resume" name="resume" accept=".pdf,.txt">
+
+                <button type="submit">Upload Resume</button>
+            </form>
+
+            <div class="form-actions">
+                <a href="{{ url_for('profile') }}" class="btn secondary">Back to Profile</a>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

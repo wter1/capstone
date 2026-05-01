@@ -17,11 +17,25 @@
     </div>
 
     <div class="profile-actions">
-        <a href="{{ url_for('create') }}" class="btn secondary">Create New Profile</a>
-        <a href="{{ url_for('signout') }}" class="btn">Sign Out</a>
+        {% if has_resume %}
+            {% if output_mode == 'resume' %}
+                <a href="{{ url_for('use_form') }}" class="btn secondary">View Form Outputs</a>
+            {% else %}
+                <a href="{{ url_for('use_resume') }}" class="btn">Use Resume Outputs</a>
+            {% endif %}
+        {% endif %}
+        <a href="{{ url_for('upload_resume') }}" class="btn secondary">Upload Resume</a>
+        <a href="{{ url_for('create') }}" class="btn">Create New Profile</a>
+        <a href="{{ url_for('signout') }}" class="btn secondary">Sign Out</a>
     </div>
 
     <main>
+        {% if output_mode == 'resume' %}
+        <section class="note-section">
+            <p class="note">This page is using your uploaded resume to generate outputs.</p>
+        </section>
+        {% endif %}
+
         <section>
             <h2>👤 About Me</h2>
             <p>{{ profile.bio }}</p>
@@ -30,43 +44,59 @@
         <section>
             <h2>💼 Skills</h2>
             <ul>
-                {% for skill in profile.skills %}
-                <li>{{ skill }}</li>
-                {% endfor %}
+                {% if profile.skills %}
+                    {% for skill in profile.skills %}
+                    <li>{{ skill }}</li>
+                    {% endfor %}
+                {% else %}
+                    <li>No skills data available.</li>
+                {% endif %}
             </ul>
         </section>
 
         <section>
             <h2>🎯 Interests</h2>
             <ul>
-                {% for interest in profile.interests %}
-                <li>{{ interest }}</li>
-                {% endfor %}
+                {% if profile.interests %}
+                    {% for interest in profile.interests %}
+                    <li>{{ interest }}</li>
+                    {% endfor %}
+                {% else %}
+                    <li>No interests data available.</li>
+                {% endif %}
             </ul>
         </section>
 
         <section>
             <h2>✨ Brand Headlines</h2>
             <ul>
-                {% for headline in profile.brand_headlines %}
-                <li>{{ headline }}</li>
-                {% endfor %}
+                {% if brand_headlines %}
+                    {% for headline in brand_headlines %}
+                    <li>{{ headline }}</li>
+                    {% endfor %}
+                {% else %}
+                    <li>No headlines available.</li>
+                {% endif %}
             </ul>
         </section>
 
         <section>
             <h2>🚀 Value Proposition</h2>
             <ul>
-                <li>{{ profile.value_prop }}</li>
+                <li>{{ value_prop or 'No value proposition available.' }}</li>
             </ul>
         </section>
 
         <section>
             <h2>💬 Talking Points</h2>
             <ul>
-                {% for point in profile.talking_points %}
-                <li>{{ point }}</li>
-                {% endfor %}
+                {% if talking_points %}
+                    {% for point in talking_points %}
+                    <li>{{ point }}</li>
+                    {% endfor %}
+                {% else %}
+                    <li>No talking points available.</li>
+                {% endif %}
             </ul>
         </section>
     </main>

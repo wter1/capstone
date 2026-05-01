@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from PyPDF2 import PdfReader
 
 load_dotenv()
 
@@ -62,6 +63,95 @@ def encrypt_profile(profile, key):
 def decrypt_profile(token, key):
     payload = Fernet(key).decrypt(token.encode('utf-8'))
     return json.loads(payload.decode('utf-8'))
+
+
+def extract_resume_text(file_storage):
+    filename = file_storage.filename or ''
+    data = file_storage.read()
+    if filename.lower().endswith('.txt'):
+        return data.decode('utf-8', errors='ignore').strip()
+    if filename.lower().endswith('.pdf'):
+        reader = PdfReader(io.BytesIO(data))
+        text = []
+        for page in reader.pages:
+            content = page.extract_text()
+            if content:
+                text.append(content)
+        return '\n'.join(text).strip()
+    return None
+
+
+def generate_talking_points_from_resume(resume_text):
+    prompt = f"Based on this resume text, generate 3-5 concise talking points for personal branding and networking conversations. Do NOT use bold text, but make sure to include the points number order at the start of every point. Resume text: {resume_text}"
+    try:
+        response = client.chat.completions.create(
+            model='gpt-4o-mini',
+            messages=[{'role': 'user', 'content': prompt}],
+            max_tokens=400
+        )
+        points = response.choices[0].message.content.strip().split('\n')
+        return [point.strip('- ').strip() for point in points if point.strip()]
+    except Exception as e:
+        return [f"Error generating talking points: {e}"]
+
+
+def generate_brand_headlines_from_resume(resume_text):
+    prompt = f"""
+Based on this resume text:
+{resume_text}
+
+Generate 3 memorable LinkedIn-style personal brand headlines.
+
+Rules:
+- Use a format like: Skill | Identity | Interest
+- Make them distinct, concise, and professional
+- Do not use bold text
+- Do not explain anything
+- Each headline should be one line
+"""
+    try:
+        response = client.chat.completions.create(
+            model='gpt-4o-mini',
+            messages=[{'role': 'user', 'content': prompt}],
+            max_tokens=200
+        )
+        headlines = response.choices[0].message.content.strip().split('\n')
+        return [headline.strip('- ').strip() for headline in headlines if headline.strip()]
+    except Exception as e:
+        return [f"Error generating brand headlines: {e}"]
+
+
+def generate_value_prop_from_resume(resume_text):
+    prompt = f"""
+Based on this resume text:
+{resume_text}
+
+Write ONE clear personal value proposition.
+
+Rules:
+- Start with \"I help...\" or \"I bring...\"
+- Be specific and professional
+- Keep it under 20 words
+- Do not use bold text
+- Do not explain anything
+"""
+    try:
+        response = client.chat.completions.create(
+            model='gpt-4o-mini',
+            messages=[{'role': 'user', 'content': prompt}],
+            max_tokens=100
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"Error generating value proposition: {e}"
+
+
+def generate_resume_outputs(resume_text):
+    return {
+        'talking_points': generate_talking_points_from_resume(resume_text),
+        'brand_headlines': generate_brand_headlines_from_resume(resume_text),
+        'value_prop': generate_value_prop_from_resume(resume_text)
+    }
 
 
 def get_current_user_record():
@@ -221,7 +311,9 @@ def signup():
                     'email': email,
                     'password_hash': hash_password(password, salt),
                     'salt': base64.b64encode(salt).decode('utf-8'),
-                    'encrypted_profile': None
+                    'encrypted_profile': None,
+                    'encrypted_resume': None,
+                    'encrypted_resume_outputs': None
                 }
                 store[user_id] = record
                 save_user_store(store)
@@ -272,6 +364,63 @@ def signout():
     return redirect(url_for('home'))
 
 
+@app.route('/upload_resume', methods=['GET', 'POST'])
+def upload_resume():
+    key = get_user_key()
+    if 'user_id' not in session or not key:
+        return redirect(url_for('home'))
+
+    record, store, user_id = get_current_user_record()
+    if not record:
+        return redirect(url_for('home'))
+
+    error = None
+    if request.method == 'POST':
+        resume_file = request.files.get('resume')
+        if not resume_file or resume_file.filename == '':
+            error = 'Please select a resume file to upload.'
+        else:
+            resume_text = extract_resume_text(resume_file)
+            if not resume_text:
+                error = 'Upload failed. Supported file types: .txt, .pdf'
+            else:
+                record['encrypted_resume'] = encrypt_profile({'text': resume_text}, key)
+                record['encrypted_resume_outputs'] = encrypt_profile(generate_resume_outputs(resume_text), key)
+                store[user_id] = record
+                save_user_store(store)
+                session['output_mode'] = 'resume'
+                return redirect(url_for('profile'))
+    return render_template('upload_resume.html', error=error, resume_exists=bool(record.get('encrypted_resume')))
+
+
+@app.route('/use_resume')
+def use_resume():
+    key = get_user_key()
+    if 'user_id' not in session or not key:
+        return redirect(url_for('home'))
+    record, store, user_id = get_current_user_record()
+    if not record or not record.get('encrypted_resume'):
+        return redirect(url_for('profile'))
+
+    if not record.get('encrypted_resume_outputs'):
+        resume_text = decrypt_profile(record['encrypted_resume'], key)['text']
+        record['encrypted_resume_outputs'] = encrypt_profile(generate_resume_outputs(resume_text), key)
+        store[user_id] = record
+        save_user_store(store)
+
+    session['output_mode'] = 'resume'
+    return redirect(url_for('profile'))
+
+
+@app.route('/use_form')
+def use_form():
+    key = get_user_key()
+    if 'user_id' not in session or not key:
+        return redirect(url_for('home'))
+    session['output_mode'] = 'form'
+    return redirect(url_for('profile'))
+
+
 @app.route('/create', methods=['GET', 'POST'])
 def create():
     key = get_user_key()
@@ -307,16 +456,63 @@ def profile():
     if 'user_id' not in session or not key:
         return redirect(url_for('home'))
 
-    record, _, _ = get_current_user_record()
-    if not record or not record.get('encrypted_profile'):
-        return redirect(url_for('create'))
-
-    try:
-        profile = decrypt_profile(record['encrypted_profile'], key)
-    except Exception:
+    record, store, user_id = get_current_user_record()
+    if not record:
         return redirect(url_for('home'))
 
-    return render_template('index.html', profile=profile)
+    output_mode = session.get('output_mode', 'form')
+    has_form = bool(record.get('encrypted_profile'))
+    has_resume = bool(record.get('encrypted_resume'))
+
+    if output_mode == 'resume' and not has_resume:
+        output_mode = 'form'
+        session['output_mode'] = 'form'
+
+    profile = None
+    talking_points = []
+    brand_headlines = []
+    value_prop = ''
+
+    if has_form:
+        try:
+            profile = decrypt_profile(record['encrypted_profile'], key)
+        except Exception:
+            return redirect(url_for('home'))
+    else:
+        profile = {
+            'name': session.get('email', 'User').split('@')[0].title(),
+            'bio': 'Profile information is not available. Resume-based outputs are shown below.',
+            'skills': [],
+            'interests': []
+        }
+
+    if output_mode == 'resume' and has_resume:
+        if record.get('encrypted_resume_outputs'):
+            resume_outputs = decrypt_profile(record['encrypted_resume_outputs'], key)
+        else:
+            resume_text = decrypt_profile(record['encrypted_resume'], key)['text']
+            resume_outputs = generate_resume_outputs(resume_text)
+            record['encrypted_resume_outputs'] = encrypt_profile(resume_outputs, key)
+            store[user_id] = record
+            save_user_store(store)
+        talking_points = resume_outputs.get('talking_points', [])
+        brand_headlines = resume_outputs.get('brand_headlines', [])
+        value_prop = resume_outputs.get('value_prop', '')
+    else:
+        talking_points = profile.get('talking_points', [])
+        brand_headlines = profile.get('brand_headlines', [])
+        value_prop = profile.get('value_prop', '')
+
+    return render_template(
+        'index.html',
+        profile=profile,
+        output_mode=output_mode,
+        has_resume=has_resume,
+        has_form=has_form,
+        talking_points=talking_points,
+        brand_headlines=brand_headlines,
+        value_prop=value_prop
+    )
 
 @app.route('/avatar')
 def avatar():
